@@ -2,9 +2,21 @@
 
 Run an AI software team without writing code. For people who do not write code: how to lead real software building with AI agents, safely.
 
+> **Who this is for:** founders, product owners and others who lead a software product. You decide what to build and why. AI agents plan the work, write the code, review every change and add it to the product. You also approve any change to the rules the AI works under. A small script stops the AI from adding any change that has not passed the automatic tests and a review by a separate, stronger AI model.
+>
+> **What you need:**
+> - Claude Code, on a paid Claude plan that includes the strongest model and enough usage to run several AI sessions at once. Section 7 has short notes for other AI tools.
+> - A GitHub repository for your product, with automatic tests (CI) that run on every change. If you have none yet, the AI can set them up with you.
+> - A tool for two lists, one for the work and one for your decisions, that AI agents can read, add to and comment on. We use Notion.
+> - If other people work with you, we also use Google Drive and Slack.
+>
+> **What you do not need:** our product or its code. This is a written method with example files and one example script, not a product.
+>
+> **How to start:** read sections 1 to 4 (about 15 to 20 minutes). The setup in section 7 is technical. You can give this guide to Claude Code or another AI coding tool and ask it to set things up with you, step by step.
+
 This kit describes how we run a software build with one AI "orchestrator" session. The orchestrator plans the work and gives it to cheaper AI builders. A stronger model reviews every change. A script refuses any merge that does not have that review. The human owner is asked only a short, named list of questions.
 
-We share it as an example to copy and adapt. It is not a product, and it does not need any of our code. Sections 1 to 4 explain how the building works and why. Section 5 shows how the same setup makes content: articles, videos, decks and other material. Section 6 has the lessons we learnt, and section 7 the technical setup.
+We share it as an example to copy and adapt. Sections 1 to 4 explain how the building works and why. Section 5 shows how the same setup makes content: articles, videos, decks and other material. Section 6 has the lessons we learnt, and section 7 the technical setup.
 
 
 > This file holds the whole kit in one document: the guide first, then every kit file as an appendix. Where the guide names a file such as `agents/builder.md`, find the appendix with that name below. If you do not use Claude Code, read the header block at the top of an agent or skill appendix as "the model tier and tools this session gets", and the rest as the instructions to give that session.
