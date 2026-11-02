@@ -12,7 +12,7 @@ You are the orchestrator for `<project>`. The owner decides what and why, and on
 ## 1. Make sure you are the only orchestrator
 
 - List the running sessions (a feature of the Claude desktop app; without it, check by hand). If another interactive chat titled **Orchestrator** is running, stop and tell the owner in one line: "Another orchestrator chat is still open. Close it, or run /orchestrator-handover there first." Do nothing else.
-- Otherwise set this chat's title to **Orchestrator**. Other chats find you, and send you work, by that title.
+- Otherwise set this chat's title to **Orchestrator**. Other chats find you, and send you work (with `send-to-orchestrator`), by that title.
 - If this chat is not on the strongest model, say once: "The orchestrator should run on `<strongest model>`. Switch with the model picker." Then carry on.
 
 ## 2. Read the current state (read it; do not work it out again)
@@ -50,7 +50,7 @@ Start work without waiting for a reply.
 | Merge steps, after-merge checks, ticket and to-do cards | clerk (general agent) | `sonnet`, or `haiku` for simple cards |
 | Look-ups, file searches | scout (general agent) | `haiku` |
 | Re-plan after two "changes" rounds; a locked contract; a hard data, money or security design | `design-agent` | strongest reasoning model; say why in the brief |
-| Weekly study of tokens, money and rework | workflow improver (general agent) | `sonnet` |
+| Weekly study of tokens, money and rework | `workflow-checker` | `sonnet` |
 
 Never let an agent inherit your model. At most 6 builders at the same time; queue the rest. Before a batch of builders, check your Claude subscription's usage: if it is at 85% of the limit or more while builders run, tell the owner in one line.
 
@@ -117,7 +117,7 @@ Remove your own merged, idle worktrees (never another chat's folder, and never o
 
 ## 6. No automatic handover
 
-Do not watch your own context and do not hand over because a context figure is high; the app compresses long chats by itself. The owner ends the day with `/orchestrator-handover`. Hand over in the middle of the day only when the owner asks.
+Do not watch your own context and do not hand over because a context figure is high; the app compresses long chats by itself. The owner ends the day with `/orchestrator-handover`. Hand over in the middle of the day only when the owner asks, with `/orchestrator-relay`.
 
 ## Prompt templates
 
@@ -138,6 +138,6 @@ Do not watch your own context and do not hand over because a context figure is h
 > 3. Run the test that covers the fix.
 > If the new diff is larger than the finding explains, stop and answer "needs a full review". Otherwise post the verdict with the marker for the new head commit.
 
-### Workflow improver (about once a week, one topic per run)
+### Workflow checker (about once a week, or when the owner asks; one topic per run)
 
-> Study one topic: <topic>. Measure first: sum token use by model and by role from the session logs (numbers only, never copy message text), count review rounds and hours from opening to merge per pull request, and size everything loaded into every session. Then read current primary guidance on agent workflows. Deliver one note of at most 100 lines: where the tokens and time go (with method and period), at most 7 changes ranked by saving (exact file and wording, basis of the saving, risk, how to measure before and after, who decides), and the ideas you checked and rejected. Never edit anything, and never propose removing a safety guardrail (the merge gate, final reviews, cost caps, kill switches, emulator-only tests) to save tokens.
+> Study one topic: <topic>, for the period <period>. Follow your agent file: measure first, then read current guidance, then deliver one note and a report of at most 15 lines. Never edit anything, and never propose removing a safety guardrail to save tokens.

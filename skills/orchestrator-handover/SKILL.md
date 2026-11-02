@@ -21,7 +21,7 @@ Goal: tomorrow's fresh orchestrator can start in two minutes from one short file
 
 ## 3. Write the handover
 
-1. Move the current `~/.claude/orchestrator/HANDOVER.md` to `~/.claude/orchestrator/handovers/<YYYY-MM-DD>.md` (the date of the file being replaced).
+1. Move the current `~/.claude/orchestrator/HANDOVER.md` to `~/.claude/orchestrator/handovers/<YYYY-MM-DD>.md` (the date of the file being replaced). If that name already exists, add `-HHMM` (the local time) to the name.
 2. Write a new `~/.claude/orchestrator/HANDOVER.md` from the template `~/.claude/orchestrator/handover-template.md`: **at most 70 lines, current state only** (no history, no story of the day). It has:
    - `Written:` weekday, date and local time; and `Old chat:` this chat's session id;
    - **Restart list**: every helper that was still working, with its branch and what is left (tomorrow's chat cannot resume them);
