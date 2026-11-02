@@ -64,7 +64,7 @@ Each role is a separate AI session or agent with its own instructions. The model
 | **Clerk** | Mid-priced or small (Sonnet or Haiku) | Mechanical work: the merge steps after CI is green, the after-merge checks, ticket comments, to-do cards. | Makes decisions. |
 | **Scout** | Small (Haiku) | Look-ups, file searches, read-only research. Reports a short answer. | Changes anything. |
 | **Hard-design agent** | Deep-reasoning (Fable; Opus works too) | Solves one hard design problem: a ticket that failed review twice, a change to a locked data contract, a hard data, money or security question. Writes a design note with options and a recommendation. | Writes code. |
-| **Workflow checker** | Mid-priced (Sonnet) | About once a week, or when costs jump: measures where tokens, money and waiting time go and where work is done twice (from session logs and pull request history), studies how good orchestrators handle loops, memory, context and skills, and proposes a short ranked list of changes. | Edits rules, skills, memory or code. Proposes removing a safety guardrail to save tokens. |
+| **Workflow checker** | Mid-priced (Sonnet) | About once a week, or when the owner asks: measures where tokens, money and waiting time go and where work is done twice (from session logs and pull request history), studies how good orchestrators handle loops, memory, context and skills, and proposes a short ranked list of changes. | Edits rules, skills, memory or code. Proposes removing a safety guardrail to save tokens. |
 
 ---
 
@@ -147,7 +147,7 @@ Sometimes the human wants a fresh chat before the day ends. The human types `/or
 
 ### Checking the workflow itself (about once a week)
 
-About once a week, or when costs jump, the orchestrator starts the workflow checker (`agents/workflow-checker.md`) on one topic. The checker measures first: what is loaded into every session, the tokens by model and by role from the session logs, and the review rounds and hours per pull request. Then it reads current guidance on how good orchestrators handle loops, memory, context and skills. It delivers one note of at most 100 lines: where the tokens and money go, at most 7 changes ranked by saving (each with its basis, its risk and who decides), and a line for each idea it checked and rejected. It only reads and measures. The orchestrator applies changes to its own skills, rule changes go into the weekly bundle, and a change in the human's areas becomes a question. It never proposes removing a safety guardrail to save tokens.
+About once a week, or when the owner asks, the orchestrator starts the workflow checker (`agents/workflow-checker.md`) on one topic. The checker measures first: what is loaded into every session, the tokens by model and by role from the session logs, and the review rounds and hours per pull request. Then it reads current guidance on how good orchestrators handle loops, memory, context and skills. It delivers one note of at most 100 lines: where the tokens and money go, at most 7 changes ranked by saving (each with its basis, its risk and who decides), and a line for each idea it checked and rejected. It only reads and measures. The orchestrator applies changes to its own skills, rule changes go into the weekly bundle, and a change in the human's areas becomes a question. It never proposes removing a safety guardrail to save tokens.
 
 ---
 

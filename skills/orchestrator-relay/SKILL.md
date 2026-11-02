@@ -22,7 +22,7 @@ Nothing merges during a relay unless it was already approved and the gate passes
 
 ## 2. Write the handover
 
-Follow `orchestrator-handover` steps 1 to 3 (move the old `HANDOVER.md` into `handovers/`; the new one has at most 70 lines of current state), with these differences:
+Follow `orchestrator-handover` steps 1 to 3 (move the old `HANDOVER.md` into `handovers/`, adding `-HHMM` to the name if that name already exists; the new one has at most 70 lines of current state), with these differences:
 
 - First lines: `Written:` with the weekday, date and local time, and the word "relay"; `Old chat:` with this chat's id and its new title.
 - **Restart list:** one line for every helper that was running or did not answer: its role, the ticket or pull request, the branch and folder, what is left, and "start a fresh builder on that branch; read `git status` and the diff first". The old chat's helpers cannot be resumed.
@@ -43,7 +43,7 @@ Follow `orchestrator-handover` steps 1 to 3 (move the old `HANDOVER.md` into `ha
 
 - **Not running after 90 seconds:** rename this chat back to `Orchestrator`, say in two lines what happened, do not archive, and try at most once more.
 - **The app refuses to start a chat** (for example when the owner is away from the computer): leave this chat titled `Orchestrator (old, <HH:MM>)`, merge nothing more, and send one notification: "Handover written. Open a new chat and type /orchestrator." The new chat reads the handover and archives this one.
-- **The new chat is already getting full soon after it starts:** the handover or the start-up reading is too big. Say so. Do not hand over again.
+- **The new chat is slow or compressed soon after it starts:** the handover or the start-up reading is too big. Say so. Do not hand over again.
 
 ## What a relay cannot do (say so plainly if asked)
 

@@ -49,5 +49,5 @@ The orchestrator (see `skills/orchestrator`) takes work only from the tickets on
 
 - Build, branch, review or merge. That is the orchestrator's work.
 - Put these tickets on the owner's decision list. That list holds only decisions the owner must make, one card each (`templates/todo-card.md`).
-- Tick the Orchestrator box on a ticket that belongs to another person's lane, unless the owner says so.
+- Tick the Orchestrator box on a ticket that another person owns, unless the owner says so.
 - Use slang or idioms in ticket text. Other people read the board, and some of them are not native English speakers.

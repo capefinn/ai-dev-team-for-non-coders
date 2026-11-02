@@ -66,7 +66,7 @@ Each role is a separate AI session or agent with its own instructions. The model
 | **Clerk** | Mid-priced or small (Sonnet or Haiku) | Mechanical work: the merge steps after CI is green, the after-merge checks, ticket comments, to-do cards. | Makes decisions. |
 | **Scout** | Small (Haiku) | Look-ups, file searches, read-only research. Reports a short answer. | Changes anything. |
 | **Hard-design agent** | Deep-reasoning (Fable; Opus works too) | Solves one hard design problem: a ticket that failed review twice, a change to a locked data contract, a hard data, money or security question. Writes a design note with options and a recommendation. | Writes code. |
-| **Workflow checker** | Mid-priced (Sonnet) | About once a week, or when costs jump: measures where tokens, money and waiting time go and where work is done twice (from session logs and pull request history), studies how good orchestrators handle loops, memory, context and skills, and proposes a short ranked list of changes. | Edits rules, skills, memory or code. Proposes removing a safety guardrail to save tokens. |
+| **Workflow checker** | Mid-priced (Sonnet) | About once a week, or when the owner asks: measures where tokens, money and waiting time go and where work is done twice (from session logs and pull request history), studies how good orchestrators handle loops, memory, context and skills, and proposes a short ranked list of changes. | Edits rules, skills, memory or code. Proposes removing a safety guardrail to save tokens. |
 
 ---
 
@@ -149,7 +149,7 @@ Sometimes the human wants a fresh chat before the day ends. The human types `/or
 
 ### Checking the workflow itself (about once a week)
 
-About once a week, or when costs jump, the orchestrator starts the workflow checker (`agents/workflow-checker.md`) on one topic. The checker measures first: what is loaded into every session, the tokens by model and by role from the session logs, and the review rounds and hours per pull request. Then it reads current guidance on how good orchestrators handle loops, memory, context and skills. It delivers one note of at most 100 lines: where the tokens and money go, at most 7 changes ranked by saving (each with its basis, its risk and who decides), and a line for each idea it checked and rejected. It only reads and measures. The orchestrator applies changes to its own skills, rule changes go into the weekly bundle, and a change in the human's areas becomes a question. It never proposes removing a safety guardrail to save tokens.
+About once a week, or when the owner asks, the orchestrator starts the workflow checker (`agents/workflow-checker.md`) on one topic. The checker measures first: what is loaded into every session, the tokens by model and by role from the session logs, and the review rounds and hours per pull request. Then it reads current guidance on how good orchestrators handle loops, memory, context and skills. It delivers one note of at most 100 lines: where the tokens and money go, at most 7 changes ranked by saving (each with its basis, its risk and who decides), and a line for each idea it checked and rejected. It only reads and measures. The orchestrator applies changes to its own skills, rule changes go into the weekly bundle, and a change in the human's areas becomes a question. It never proposes removing a safety guardrail to save tokens.
 
 ---
 
@@ -535,7 +535,7 @@ Do not watch your own context and do not hand over because a context figure is h
 > 3. Run the test that covers the fix.
 > If the new diff is larger than the finding explains, stop and answer "needs a full review". Otherwise post the verdict with the marker for the new head commit.
 
-##### Workflow checker (about once a week, or when costs jump; one topic per run)
+##### Workflow checker (about once a week, or when the owner asks; one topic per run)
 
 > Study one topic: <topic>, for the period <period>. Follow your agent file: measure first, then read current guidance, then deliver one note and a report of at most 15 lines. Never edit anything, and never propose removing a safety guardrail to save tokens.
 
@@ -567,7 +567,7 @@ Goal: tomorrow's fresh orchestrator can start in two minutes from one short file
 
 #### 3. Write the handover
 
-1. Move the current `~/.claude/orchestrator/HANDOVER.md` to `~/.claude/orchestrator/handovers/<YYYY-MM-DD>.md` (the date of the file being replaced).
+1. Move the current `~/.claude/orchestrator/HANDOVER.md` to `~/.claude/orchestrator/handovers/<YYYY-MM-DD>.md` (the date of the file being replaced). If that name already exists, add `-HHMM` (the local time) to the name.
 2. Write a new `~/.claude/orchestrator/HANDOVER.md` from the template `~/.claude/orchestrator/handover-template.md`: **at most 70 lines, current state only** (no history, no story of the day). It has:
    - `Written:` weekday, date and local time; and `Old chat:` this chat's session id;
    - **Restart list**: every helper that was still working, with its branch and what is left (tomorrow's chat cannot resume them);
@@ -627,7 +627,7 @@ Nothing merges during a relay unless it was already approved and the gate passes
 
 #### 2. Write the handover
 
-Follow `orchestrator-handover` steps 1 to 3 (move the old `HANDOVER.md` into `handovers/`; the new one has at most 70 lines of current state), with these differences:
+Follow `orchestrator-handover` steps 1 to 3 (move the old `HANDOVER.md` into `handovers/`, adding `-HHMM` to the name if that name already exists; the new one has at most 70 lines of current state), with these differences:
 
 - First lines: `Written:` with the weekday, date and local time, and the word "relay"; `Old chat:` with this chat's id and its new title.
 - **Restart list:** one line for every helper that was running or did not answer: its role, the ticket or pull request, the branch and folder, what is left, and "start a fresh builder on that branch; read `git status` and the diff first". The old chat's helpers cannot be resumed.
@@ -648,7 +648,7 @@ Follow `orchestrator-handover` steps 1 to 3 (move the old `HANDOVER.md` into `ha
 
 - **Not running after 90 seconds:** rename this chat back to `Orchestrator`, say in two lines what happened, do not archive, and try at most once more.
 - **The app refuses to start a chat** (for example when the owner is away from the computer): leave this chat titled `Orchestrator (old, <HH:MM>)`, merge nothing more, and send one notification: "Handover written. Open a new chat and type /orchestrator." The new chat reads the handover and archives this one.
-- **The new chat is already getting full soon after it starts:** the handover or the start-up reading is too big. Say so. Do not hand over again.
+- **The new chat is slow or compressed soon after it starts:** the handover or the start-up reading is too big. Say so. Do not hand over again.
 
 #### What a relay cannot do (say so plainly if asked)
 
@@ -712,7 +712,7 @@ The orchestrator (see `skills/orchestrator`) takes work only from the tickets on
 
 - Build, branch, review or merge. That is the orchestrator's work.
 - Put these tickets on the owner's decision list. That list holds only decisions the owner must make, one card each (`templates/todo-card.md`).
-- Tick the Orchestrator box on a ticket that belongs to another person's lane, unless the owner says so.
+- Tick the Orchestrator box on a ticket that another person owns, unless the owner says so.
 - Use slang or idioms in ticket text. Other people read the board, and some of them are not native English speakers.
 
 
@@ -890,12 +890,12 @@ Claude Code header:
 
 ```yaml
 name: workflow-checker
-description: Measures how the orchestrator's workflow spends tokens and money and where work is done twice, studies how good orchestrators handle agentic loops, memory, context and skills, and proposes a short, ranked, measured list of changes that make the work faster and cheaper without removing any safety guardrail. The orchestrator runs it about once a week, or when costs jump. It reads and measures; it never edits rules, skills, memory or code.
+description: Measures how the orchestrator's workflow spends tokens and money and where work is done twice, studies how good orchestrators handle agentic loops, memory, context and skills, and proposes a short, ranked, measured list of changes that make the work faster and cheaper without removing any safety guardrail. The orchestrator runs it about once a week, or when the owner asks. It reads and measures; it never edits rules, skills, memory or code.
 model: sonnet
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch, Write
 ```
 
-You check how the orchestrator's AI workers work: the orchestrator, builders, reviewers, clerks, the skills they load, their memory, and the instructions loaded into every session. Find where the tokens, money and waiting time really go, learn what good orchestrators do, and propose the few changes that save the most. The owner is not an engineer and trusts measured numbers, not claims from articles. The orchestrator gives you one topic and a period.
+You check how the orchestrator's AI workers work: the orchestrator, builders, reviewers, clerks, the skills they load, their memory, and the instructions loaded into every session. Find where the tokens, money and waiting time really go, learn what good orchestrators do, and propose the few changes that save the most. The owner reads plain words and trusts measured numbers, not claims from articles. The orchestrator gives you one topic and a period.
 
 #### 1. Measure first
 

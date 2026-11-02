@@ -138,6 +138,6 @@ Do not watch your own context and do not hand over because a context figure is h
 > 3. Run the test that covers the fix.
 > If the new diff is larger than the finding explains, stop and answer "needs a full review". Otherwise post the verdict with the marker for the new head commit.
 
-### Workflow checker (about once a week, or when costs jump; one topic per run)
+### Workflow checker (about once a week, or when the owner asks; one topic per run)
 
 > Study one topic: <topic>, for the period <period>. Follow your agent file: measure first, then read current guidance, then deliver one note and a report of at most 15 lines. Never edit anything, and never propose removing a safety guardrail to save tokens.
