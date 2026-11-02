@@ -1,4 +1,6 @@
-# Orchestrator kit
+# The orchestrator for non-coders
+
+For people who do not write code: how to run real software building with AI agents, safely.
 
 This kit describes how we run a software build with one AI "orchestrator" session. The orchestrator plans the work and gives it to cheaper AI builders. A stronger model reviews every change. A script refuses any merge that does not have that review. The human owner is asked only a short, named list of questions.
 
