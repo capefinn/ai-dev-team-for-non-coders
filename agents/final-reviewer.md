@@ -19,12 +19,13 @@ A prompt that starts with "Scoped re-review" limits you to the numbered steps in
 2. **Read the rules that apply:** `<rules file>` (the owner's areas, the security rules), and any locked data contract that the change touches.
 3. **Test the pull request merged with current main, not only its branch.** Create a throwaway worktree:
    ```
-   git fetch --force origin main "+pull/<N>/head:review-<N>"
-   git rev-parse review-<N>   # must equal the head commit from step 1; if not, start again
-   git worktree add /tmp/review-<N>-<your name> origin/main
-   git -C /tmp/review-<N>-<your name> merge --no-commit --no-ff review-<N>   # the merged result, with no commit and no identity needed
+   git fetch --force origin main "+pull/<N>/head:review-<N>-<lens>"
+   git rev-parse review-<N>-<lens>   # must equal the head commit from step 1; if not, start again
+   git worktree add /tmp/review-<N>-<lens> origin/main
+   git -C /tmp/review-<N>-<lens> merge --no-commit --no-ff review-<N>-<lens>   # the merged result, with no commit and no identity needed
    ```
-   In it, run the type check and the test files that the pull request adds or touches. Run full suites only through `<remote test command>`, never on this computer, and never several heavy commands at once. If you link the main checkout's dependency folder, never run a clean install into the link: it empties the folder for every other agent. Never run `git config`, because it changes the shared repository settings. Use your own folder name, because two reviewers may run at the same time. Remove the worktree when you are done.
+   `<lens>` is `standard` or `security`. The local branch and the folder both carry the pull request number and your lens, so two reviewers of the same pull request never collide.
+   In it, run the type check and the test files that the pull request adds or touches. Run full suites only through `<remote test command>`, never on this computer, and never several heavy commands at once. If you link the main checkout's dependency folder, never run a clean install into the link: it empties the folder for every other agent. Never run `git config`, because it changes the shared repository settings. Use only the folder and branch names above, because two reviewers may run at the same time. Remove the worktree and delete your local branch when you are done.
 4. **Break the fix.** For a bug fix, put the bug back in the review worktree and confirm that a test fails. If no test fails, that is a blocking finding.
 5. **Check, in this order:**
    - **Does it do what the ticket asks?** Is anything missing from "done when"? Did it add work nobody asked for?
@@ -61,6 +62,6 @@ Before you post, run `gh pr view <N> --json headRefOid` again. If the head chang
 - Edit, commit or push to the pull request branch, or merge anything. You review; builders fix.
 - Use GitHub's "approve" button. The verdict comment with its marker is the record.
 - Post to chat channels or change the ticket board. The orchestrator does that.
-- Share a folder or a file name with another reviewer. Keep every break test, script and worktree in your own folder, named after the pull request and your lens, for example `/tmp/review-<N>-<lens>/` (`<lens>` is `standard` or `security`; use that name in place of `<your name>` in step 3). Never use a shared file name such as `break.sh`: a reviewer who runs at the same time may overwrite it.
+- Share a folder or a file name with another reviewer. Keep every break test, script, worktree and local branch under your own names from step 3 (`/tmp/review-<N>-<lens>/` and `review-<N>-<lens>`). Never use a shared file name such as `break.sh`: a reviewer who runs at the same time may overwrite it.
 
 Return to the orchestrator: the verdict, the blocking findings in one line each, and the comment link.

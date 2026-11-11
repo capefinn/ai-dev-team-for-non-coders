@@ -25,7 +25,7 @@ We share it as an example to copy and adapt. Sections 1 to 4 explain how the bui
 | `README.md` | This guide |
 | `orchestrator-guide.md` | The same guide and every file below in one document, for readers who do not use Claude Code |
 | `skills/orchestrator/SKILL.md` | The start-of-day routine for the orchestrator chat |
-| `skills/orchestrator-handover/SKILL.md` | The end-of-day routine: stop work safely, write the handover, send the daily message |
+| `skills/orchestrator-handover/SKILL.md` | The closing routine, only for when the human wants to close the chat: stop work safely, write the handover, send the daily message |
 | `skills/orchestrator-relay/SKILL.md` | The mid-day handover to a fresh orchestrator chat, only when the human asks: wait for a quiet moment, write the handover, start the new chat, retire the old one |
 | `skills/send-to-orchestrator/SKILL.md` | How any other chat puts work in the orchestrator's queue: find or create the ticket, make it buildable, flag it, comment, tell the orchestrator. It builds nothing |
 | `agents/builder.md` | The builder agent: one ticket, one draft pull request |
@@ -77,7 +77,7 @@ Each role is a separate AI session or agent with its own instructions. The model
 | **Builder** | Mid-priced (Sonnet) | Builds one ticket in its own worktree, runs the tests, opens one draft pull request, reports in under 15 lines. Up to about six run at the same time. | Merges. Edits the rules files. |
 | **Final reviewer** | Strongest (Opus), fresh session | Reviews the change, runs the tests on the change merged with current main, posts one verdict for the exact head commit. Security-sensitive changes get two reviewers. | Edits code. Merges. Reviews code it wrote. |
 | **Clerk** | Mid-priced (Sonnet); small (Haiku) for a pure look-up | Light work: ticket comments, board updates, to-do cards, look-ups and read-only checks. It starts without the large always-loaded instruction files, so it is cheap to start (`agents/clerk.md`). | Merges. Builds. Messages people. Makes decisions. |
-| **Merge clerk** | Mid-priced (Sonnet) | The merge steps after CI is green, and the after-merge checks. It is a general helper, because merging needs more tools than the clerk has. | Makes decisions. |
+| **Merge clerk** | Mid-priced (Sonnet) | The merge steps after CI is green, and the after-merge checks. It is started as a general helper; the lean clerk never merges. | Makes decisions. |
 | **Scout** | Small (Haiku) | Look-ups, file searches, read-only research. Reports a short answer. | Changes anything. |
 | **Hard-design agent** | Deep-reasoning (Fable; Opus works too) | Solves one hard design problem: a ticket that failed review twice, a change to a locked data contract, a hard data, money or security question. Writes a design note with options and a recommendation. | Writes code. |
 | **Workflow checker** | Mid-priced (Sonnet) | About once a week, or when the owner asks: measures where tokens, money and waiting time go and where work is done twice (from session logs and pull request history), studies how good orchestrators handle loops, memory, context and skills, and proposes a short ranked list of changes. | Edits rules, skills, memory or code. Proposes removing a safety guardrail to save tokens. |
@@ -88,10 +88,10 @@ Each role is a separate AI session or agent with its own instructions. The model
 
 ### Start of day
 
-The human opens an orchestrator chat and types one command (`/orchestrator`). One chat can keep running across days, so a new one is needed only when the human asks, after a change of account, or when the chat has become slow or forgetful. The orchestrator:
+The human opens an orchestrator chat and types one command (`/orchestrator`). One chat can keep running across days: the human types `/orchestrator` in the same chat each morning. A new chat is needed only when the human asks, after a change of account, or when the chat has become slow or forgetful. The orchestrator:
 
-1. checks that no other orchestrator chat is running (two orchestrators once worked on the same pull request within minutes of each other);
-2. reads the last handover or checkpoint file and the notes of the last two days, as a list of things to check, not as facts, and checks that the nightly backup of its notes ran;
+1. checks that no other orchestrator chat is running, not counting its own chat (two orchestrators once worked on the same pull request within minutes of each other);
+2. reads the last handover or checkpoint file and the notes of the last two days, as a list of things to check, not as facts, and, if you keep a nightly backup of the notes, checks that it ran;
 3. reads the live state: open pull requests, CI results and review verdicts from GitHub, with a status command; the queue on the ticket board; and what the human answered overnight on the to-do list;
 4. sends the human at most 8 lines: what changed and is live (with the proof in a few words), the top 3 to 5 items for today, and only new questions;
 5. starts work without waiting for a reply.
@@ -145,9 +145,9 @@ The ticket then moves to Done with the pull request link and how it was checked.
 
 ### Checkpoint every day, handover when the chat closes
 
-During the day the orchestrator writes running notes to one notes file per day. Once a day, at a time the human chooses (for example 20:00 local time) or when the human says they are leaving, it writes a **checkpoint**: it folds the notes into the handover file and keeps working in the same chat. A checkpoint ends nothing and starts no new chat. It keeps the file current, so a lost chat costs at most one day. This lets one orchestrator chat keep running across days.
+During the day the orchestrator writes running notes to one notes file per day. Once a day it writes a **checkpoint**: it folds the notes into the handover file and keeps working in the same chat. The orchestrator cannot start itself, so the human says "checkpoint" in the chat before leaving. If the human has not said it by a time the human chose (for example 20:00 local time), the orchestrator writes it at its next reply after that time. A checkpoint ends nothing and starts no new chat. It keeps the file current, so a lost chat costs at most one day. This lets one orchestrator chat keep running across days: each morning the human types `/orchestrator` in the same chat, and the orchestrator repeats its start-of-day reads.
 
-When the human wants to close the chat, the human types `/orchestrator-handover`. The orchestrator:
+When the human wants to close the chat (and only then), the human types `/orchestrator-handover`. The orchestrator:
 
 1. lets running builders finish, or tells them to commit and push their work and stop;
 2. checks that the work of every builder folder is pushed;
@@ -157,7 +157,7 @@ When the human wants to close the chat, the human types `/orchestrator-handover`
 6. renames its chat so tomorrow's orchestrator is the only one;
 7. sends the human one message of at most 6 lines.
 
-The next chat starts from that one file. A new chat is cheaper than a very long one, because a long chat re-sends its whole history with every message.
+The next chat starts from that one file. Close a chat that has become very long or slow and start a new one: a long chat re-sends its whole history with every message, so it costs more and answers more slowly.
 
 ### Handover in the middle of the day (only when the human asks)
 
@@ -167,7 +167,7 @@ Sometimes the human wants a fresh chat before the day ends. The human types `/or
 
 About once a week, or when the owner asks, the orchestrator starts the workflow checker (`agents/workflow-checker.md`) on one topic. The checker measures first: what is loaded into every session, the tokens by model and by role from the session logs, and the review rounds and hours per pull request. Then it reads current guidance on how good orchestrators handle loops, memory, context and skills. It delivers one note of at most 100 lines: where the tokens and money go, at most 7 changes ranked by saving (each with its basis, its risk and who decides), and a line for each idea it checked and rejected. It only reads and measures. The orchestrator applies changes to its own skills, rule changes go into the weekly bundle, and a change in the human's areas becomes a question. It never proposes removing a safety guardrail to save tokens.
 
-At every start of the day the orchestrator looks at the date of the newest checker note. If it is 7 or more days old, it starts the checker that day with the next topic: the weekly check once lapsed for weeks because nothing reminded anyone. Once a week it also runs a scorecard of three numbers, with small scripts that use no model: review verdicts per merged pull request, the share of tokens that were read from the cache, and the number of late resumes (see lesson 15). It writes the first three numbers down as a baseline. If a number gets worse for two weeks in a row, the change behind it is undone.
+Each morning, when the human types `/orchestrator`, the orchestrator looks at the date of the newest checker note. If it is 7 or more days old, it starts the checker that day with the next topic: the weekly check once lapsed for weeks because nothing reminded anyone. Once a week it also runs a scorecard of three numbers, with small scripts that use no model and read the session logs and the pull request history. The numbers are: the review verdicts per merged pull request (how many verdicts the average merged pull request needed; lower is better); the cache share (the part of all input tokens that came from the prompt cache; a token is a small piece of text that a model reads or writes, and cached text is read at a small part of the normal price); and the late resumes (messages to a helper that ended more than 4 minutes before; see lesson 15). It writes the first three numbers as one line in the playbook, as the baseline, and adds one line each week. If a number gets worse for two weeks in a row, the change behind it is undone.
 
 ---
 
@@ -318,7 +318,7 @@ For thumbnails and ads, build from the brand files (logo, brand illustrations, r
 
 6. **Editing a pull request while its checks run cancels the checks.** Changing the title or description creates an "edited" event. Our workflows use one concurrency group per pull request with "cancel in progress", so the edited event cancels the real runs. Edit the description before marking ready, or after CI has finished. If it happens, re-run the cancelled runs.
 
-7. **Subagents tend to stop while they wait for CI.** A subagent told "wait for CI, then merge" often ends its turn with "still waiting" and does nothing more. So the orchestrator runs the wait itself, as a background shell command: the chat stays free, and the orchestrator is woken when the command ends. When CI is green, it resumes the merge clerk, which checks the gate, merges with the literal commit, runs the after-merge checks and writes one line on the ticket. Also: no agent checks CI again and again without a pause. The GitHub API has an hourly limit that all agents share, and we reached it once.
+7. **Subagents tend to stop while they wait for CI.** A subagent told "wait for CI, then merge" often ends its turn with "still waiting" and does nothing more. So the orchestrator runs the wait itself, as a background shell command: the chat stays free, and the orchestrator is woken when the command ends. When CI is green, it starts a fresh merge clerk, which checks the gate, merges with the literal commit, runs the after-merge checks and writes one line on the ticket. Also: no agent checks CI again and again without a pause. The GitHub API has an hourly limit that all agents share, and we reached it once.
 
 8. **Stacked pull requests merge in a fixed order.** (A stack is a pull request built on top of another one.) (1) Merge the lower pull request with a merge commit, not a squash, and do not delete its branch. (2) Fetch, and check that the upper pull request still contains the lower one's merged head (`git merge-base --is-ancestor <lower head> <upper head>`). If it does not, merge main into the upper pull request and get a full review of its whole diff against main, not a scoped re-review. (3) Change the upper pull request's base to main. (4) Delete the lower branch, only after every pull request on it points at main. Never change the base first: the upper pull request would then pass the gate with the lower one's unreviewed commits. Deleting the lower branch first can close the upper pull request. Avoid stacks where you can.
 
@@ -338,7 +338,7 @@ For thumbnails and ads, build from the brand files (logo, brand illustrations, r
 
 16. **Stop at the third "changes needed" verdict.** After two rounds the orchestrator already re-plans the design. If a third "changes needed" verdict still arrives on one pull request, no fourth fix starts: the orchestrator re-plans or asks the human, and later re-reviews read only the new commits. More rounds on the same design cost more and rarely converge.
 
-17. **Measure every week with three numbers, and undo what makes them worse.** Review verdicts per merged pull request, the share of tokens read from the cache, and the number of late resumes. Each change to the workflow (a new agent type, a smaller context, a new rule) is judged by these numbers after a week or two, not by how sensible it sounded. If a number gets worse for two weeks in a row, the change behind it is undone.
+17. **Measure every week with three numbers, and undo what makes them worse.** Review verdicts per merged pull request, the cache share (the part of the input tokens that came from the prompt cache) and the number of late resumes (both are defined under "Checking the workflow itself" in section 3). Each change to the workflow (a new agent type, a smaller context, a new rule) is judged by these numbers after a week or two, not by how sensible it sounded. If a number gets worse for two weeks in a row, the change behind it is undone.
 
 ### Smaller lessons
 
@@ -356,8 +356,8 @@ For thumbnails and ads, build from the brand files (logo, brand illustrations, r
 - **One orchestrator at a time.** Give it a fixed chat title. At the start of the day it checks that no other chat has that title; at the handover the old chat is renamed and merges nothing more.
 - **Answer questions about production from production.** A local emulator returns no data, which looks like "nothing is running".
 - **Two reviewers must never share a folder or a file name.** One reviewer once overwrote another reviewer's test script. Each reviewer keeps everything in a folder named after the pull request and its lens.
-- **Keep the always-loaded notes index short.** Your tool may load only the first part of a long index and drop the rest without a warning. Check the size with a small script at every start, and move finished lines to an archive file instead of deleting notes.
-- **Back up the state and notes folders every night.** Push them to a private repository, scan for secrets before every push, and read the one-line status of the last backup at the start of the day.
+- **Keep the always-loaded notes index short.** The notes index is the file with one line per note that your tool loads into every session (in Claude Code, `MEMORY.md` in the project's memory). The tool may load only the first part of a long index and drop the rest without a warning, so a rule written near the end is lost. Check the length with a small script each morning, and move finished lines to an archive file instead of deleting notes.
+- **Back up the state and notes folders every night.** A scheduled job copies the handover, the playbook, the notes and the memory files to a private repository, after a scan for secrets, and writes a one-line status (OK with the date, or blocked). Read that line each morning: a lost computer or a damaged folder then costs at most a day.
 - **Fold the notes into the handover file once a day.** Running notes are cheap to write and easy to lose in a long chat. The daily checkpoint turns them into the one short file that the next chat reads.
 
 ---
@@ -368,8 +368,8 @@ For thumbnails and ads, build from the brand files (logo, brand illustrations, r
 
 Some steps use features of the Claude desktop app: listing, renaming and archiving chat sessions, and push notifications. If your app does not have them, do those steps by hand or leave them out.
 
-1. **Skills.** Copy `skills/orchestrator/`, `skills/orchestrator-handover/`, `skills/orchestrator-relay/` and `skills/send-to-orchestrator/` into `~/.claude/skills/`. The human then types `/orchestrator` in the morning and `/orchestrator-handover` in the evening, and `/orchestrator-relay` when a fresh chat is wanted in the middle of the day. Every other chat that finds work for the orchestrator needs `send-to-orchestrator` too: put it where those chats load their skills.
-2. **Agents.** Copy `agents/builder.md`, `agents/clerk.md`, `agents/final-reviewer.md`, `agents/design-agent.md` and `agents/workflow-checker.md` into your repository's `.claude/agents/` folder (shared with the team) or into `~/.claude/agents/` (only for you). Copy `agents/builder-brief.md` into `~/.claude/orchestrator/`: it is not an agent and has no header. If builders and the clerk use the board through an MCP server (Notion, in our case), add those tool names to `builder.md` and `clerk.md`. In `builder.md`, fill in `autoCompactWindow`, the size at which a builder summarizes its own history. In `clerk.md`, keep `omitClaudeMd: true`: it starts the clerk without the large always-loaded instruction files.
+1. **Skills.** Copy `skills/orchestrator/`, `skills/orchestrator-handover/`, `skills/orchestrator-relay/` and `skills/send-to-orchestrator/` into `~/.claude/skills/`. The human then types `/orchestrator` each morning in the same chat, says "checkpoint" before leaving, types `/orchestrator-handover` only when closing the chat, and types `/orchestrator-relay` when a fresh chat is wanted in the middle of the day. Every other chat that finds work for the orchestrator needs `send-to-orchestrator` too: put it where those chats load their skills.
+2. **Agents.** Copy `agents/builder.md`, `agents/clerk.md`, `agents/final-reviewer.md`, `agents/design-agent.md` and `agents/workflow-checker.md` into your repository's `.claude/agents/` folder (shared with the team) or into `~/.claude/agents/` (only for you). Copy `agents/builder-brief.md` into `~/.claude/orchestrator/`: it is not an agent and has no header. If builders and the clerk use the board through an MCP server (Notion, in our case), add those tool names to `builder.md` and `clerk.md`. In `builder.md`, fill in `autoCompactWindow`: the size, in tokens, at which Claude Code summarizes a builder's conversation to make room (the comment in the file explains it). In `clerk.md`, keep `omitClaudeMd: true`: it starts the clerk without the large always-loaded instruction files.
 3. **State folder.** Create `~/.claude/orchestrator/` with: `HANDOVER.md` and `handover-template.md` (both copies of `templates/handover.md`), `todo-card.md` (a copy of `templates/todo-card.md`), an empty `handovers/` folder, an empty `notes/` folder (with an empty `notes/archive/` folder inside it) and an empty `playbook.md`. The skills read these files.
 4. **Merge gate.** Copy `templates/merge-gate.example.mjs` to `scripts/merge-gate/merge-gate.mjs` in your repository, edit the constants at the top, register it in `.claude/settings.json` (the snippet is in `templates/merge-gate-hook.md`), and test it as described there.
 5. **CI.** Decide whether CI skips draft pull requests (it saves CI minutes; lesson 5 lists what follows from it). Use one concurrency group per pull request. Put the exact check names in the gate.
@@ -390,9 +390,9 @@ We wrote these as small shell scripts. Each one replaced a manual step that went
 - **clean-worktrees:** lists worktrees whose pull request is merged or closed, with no uncommitted work and no change in the last 12 hours. It removes them only when given a flag.
 - **park-check**, before the handover or a relay: the work in every builder folder is committed and pushed.
 - **remote-test:** sends a branch to the test machine and runs the full suites there.
-- **memory-health:** checks that the always-loaded notes index is still under the size that your tool loads. It prints a few lines and uses no model.
-- **backup:** copies the state and notes folders to a private repository every night, after a secret scan, and writes a one-line status file (OK, blocked, or the date of the last success).
-- **scorecard:** three small scripts that print numbers only: review verdicts per merged pull request, the share of tokens read from the cache, and late resumes.
+- **memory-health:** compares the length of the always-loaded notes index (see the smaller lessons) with the length that your tool loads. It prints a few lines, uses no model, and fails when the index is too long.
+- **backup:** a scheduled job that copies the state folder, the notes and the memory files to a private repository every night, after a secret scan. It writes a one-line status file in the state folder: OK with the date, or blocked when the scan found a secret.
+- **scorecard:** three small scripts that print numbers only, from the session logs and the pull request history: review verdicts per merged pull request, the cache share, and late resumes (defined under "Checking the workflow itself" in section 3). Ask Claude Code to write them.
 
 ### Without Claude Code
 

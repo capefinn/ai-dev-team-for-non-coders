@@ -9,7 +9,7 @@ description: Hand the orchestrator's work over to a fresh orchestrator chat in t
 
 Why the owner may ask: a long chat re-sends its whole history with every message, so it costs more and answers more slowly. A new chat starts with an empty history. Nothing is lost, because everything the next chat needs is written to one file first. The one thing a handover cannot carry is a helper that is still working: the relay waits for it, or saves its work to GitHub and restarts it in the new chat.
 
-This routine is the end-of-day handover (`orchestrator-handover`, steps 1 to 3) plus two more things: starting the new chat, and retiring the old one. At the end of the day the owner starts tomorrow's chat by hand; here this chat starts it.
+This routine is the closing handover (`orchestrator-handover`, steps 1 to 3) plus two more things: starting the new chat, and retiring the old one. When the owner closes a chat with the handover, the owner starts the next chat by hand; here this chat starts it.
 
 ## 1. Wait for a quiet moment
 
@@ -26,7 +26,7 @@ Follow `orchestrator-handover` steps 1 to 3 (move the old `HANDOVER.md` into `ha
 
 - First lines: `Written:` with the weekday, date and local time, and the word "relay"; `Old chat:` with this chat's id and its new title.
 - **Restart list:** one line for every helper that was running or did not answer: its role, the ticket or pull request, the branch and folder, what is left, and "start a fresh builder on that branch; read `git status` and the diff first". The old chat's helpers cannot be resumed.
-- **Only this chat knows:** anything the owner said, decided or was promised in this chat that is not yet on a ticket, in the playbook or on a card, and every wait still in progress ("the merge clerk waits for CI on pull request <N>, then merges; the next command is …"). Write the exact next command. Handovers lose work in this block: do not skip it.
+- **Only this chat knows:** anything the owner said, decided or was promised in this chat that is not yet on a ticket, in the playbook or on a card, and every wait still in progress ("the orchestrator waits for CI on pull request <N>, then starts the merge clerk; the next command is …"). Write the exact next command. Handovers lose work in this block: do not skip it.
 - **Waiting on the owner:** card keys only. A question without a card gets one first.
 - Write the handover once. Do not edit it afterwards.
 

@@ -1,13 +1,13 @@
 ---
 name: orchestrator-handover
-description: Close the orchestrator's chat. Stops running builders safely, folds the day's notes into a short state file that the next /orchestrator reads, updates the board, and sends the owner the one daily message. Use when the owner types /orchestrator-handover or says "end of day" or "write the handover".
+description: Close the orchestrator's chat. Stops running builders safely, folds the day's notes into a short state file that the next /orchestrator reads, updates the board, and sends the owner the one daily message. Use when the owner types /orchestrator-handover or says "close the chat" or "write the handover".
 ---
 
-# /orchestrator-handover — close the day
+# /orchestrator-handover — close the chat
 
-Goal: tomorrow's fresh orchestrator can start in two minutes from one short file, and nothing that is in progress is lost when this chat closes.
+Goal: the next orchestrator chat can start in two minutes from one short file, and nothing that is in progress is lost when this chat closes.
 
-One orchestrator chat can keep running across days. It then writes a **checkpoint** once a day instead (see `orchestrator`, "Notes and checkpoints"). A checkpoint is step 3 alone: fold the notes and write the file, and keep working in the same chat. It does not park builders, rename the chat or start anything. This full routine is for the day the owner wants to close the chat.
+One orchestrator chat can keep running across days. It then writes a **checkpoint** once a day instead (see `orchestrator`, "Notes and checkpoints"). A checkpoint is step 3 alone: fold the notes and write the file, and keep working in the same chat. It does not park builders, rename the chat or start anything. This full routine is only for closing the chat. Do not run it for any other reason.
 
 ## 1. Stop the builders safely
 
@@ -42,7 +42,7 @@ One orchestrator chat can keep running across days. It then writes a **checkpoin
 - Remove worktrees whose pull request has merged. Never remove one whose pull request is still open.
 - Board: every ticket touched today has the right status and a dated comment.
 - The owner's to-do list: one card per open question (check the card key first, never a duplicate). Close every card the owner answered today. No umbrella cards.
-- Rename this chat to `Orchestrator — closed <date>`, so tomorrow's `/orchestrator` is the only chat called "Orchestrator". Do not archive it yet: tomorrow's chat archives it after reading the `Old chat:` line. After the rename, merge nothing more.
+- Rename this chat to `Orchestrator — closed <date>`, so the next `/orchestrator` is the only chat called "Orchestrator". Do not archive it yet: the next chat archives it after reading the `Old chat:` line. After the rename, merge nothing more.
 
 ## 5. The daily message
 
@@ -53,4 +53,4 @@ One message to the owner, at most 6 lines, in plain words:
 - anything new that needs the owner (A/B with your recommendation; the card exists);
 - tomorrow's first item.
 
-End with: "Handover written. You can close this chat. Start tomorrow with /orchestrator."
+End with: "Handover written. You can close this chat. Start the next chat with /orchestrator."
