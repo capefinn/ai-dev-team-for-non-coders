@@ -1,9 +1,12 @@
 Written: <weekday d Mon HH:MM> <owner's time zone>
 Old chat: <this chat's session id> (title "Orchestrator — closed <d Mon>"; archive it after reading)
+Notes folded: <names of the notes files that this file now holds>
 
 <!-- Rules for this file: at most 70 lines. Current state only: no history, no story of the day.
      Tomorrow's orchestrator treats every line as something to check, not as a fact.
-     The status command, not this file, is the truth about pull requests. Delete this comment. -->
+     The status command, not this file, is the truth about pull requests.
+     A daily checkpoint uses the same file, but the chat keeps running: leave out the "Old chat" line.
+     Delete this comment. -->
 
 ## Restart list
 <!-- Helpers that were still working when the chat closed. Tomorrow's chat cannot resume them. -->

@@ -1,11 +1,13 @@
 ---
 name: orchestrator-handover
-description: End the orchestrator's day. Stops running builders safely, writes a short state file that tomorrow's /orchestrator reads, updates the board, and sends the owner the one daily message. Use when the owner types /orchestrator-handover or says "end of day" or "write the handover".
+description: Close the orchestrator's chat. Stops running builders safely, folds the day's notes into a short state file that the next /orchestrator reads, updates the board, and sends the owner the one daily message. Use when the owner types /orchestrator-handover or says "end of day" or "write the handover".
 ---
 
 # /orchestrator-handover — close the day
 
 Goal: tomorrow's fresh orchestrator can start in two minutes from one short file, and nothing that is in progress is lost when this chat closes.
+
+One orchestrator chat can keep running across days. It then writes a **checkpoint** once a day instead (see `orchestrator`, "Notes and checkpoints"). A checkpoint is step 3 alone: fold the notes and write the file, and keep working in the same chat. It does not park builders, rename the chat or start anything. This full routine is for the day the owner wants to close the chat.
 
 ## 1. Stop the builders safely
 
@@ -21,9 +23,10 @@ Goal: tomorrow's fresh orchestrator can start in two minutes from one short file
 
 ## 3. Write the handover
 
-1. Move the current `~/.claude/orchestrator/HANDOVER.md` to `~/.claude/orchestrator/handovers/<YYYY-MM-DD>.md` (the date of the file being replaced). If that name already exists, add `-HHMM` (the local time) to the name.
-2. Write a new `~/.claude/orchestrator/HANDOVER.md` from the template `~/.claude/orchestrator/handover-template.md`: **at most 70 lines, current state only** (no history, no story of the day). It has:
-   - `Written:` weekday, date and local time; and `Old chat:` this chat's session id;
+1. Fold the notes. During the day the orchestrator writes running notes to `~/.claude/orchestrator/notes/handover-notes-<date>.md`, one file per day. Read today's file and any older file that is still outside `notes/archive/`. Then: (a) each lasting lesson or hard rule in them goes, as one line, to the playbook; (b) the state goes into HANDOVER.md; (c) every folded file moves to `notes/archive/`. Never delete a file.
+2. Move the current `~/.claude/orchestrator/HANDOVER.md` to `~/.claude/orchestrator/handovers/<YYYY-MM-DD>.md` (the date of the file being replaced). If that name already exists, add `-HHMM` (the local time) to the name.
+3. Write a new `~/.claude/orchestrator/HANDOVER.md` from the template `~/.claude/orchestrator/handover-template.md`: **at most 70 lines, current state only** (no history, no story of the day). It has:
+   - `Written:` weekday, date and local time; `Old chat:` this chat's session id (leave it out at a checkpoint); and `Notes folded:` the names of the notes files you folded;
    - **Restart list**: every helper that was still working, with its branch and what is left (tomorrow's chat cannot resume them);
    - **Open pull requests**: one line each with number, ticket, head (7 characters), review state, what it waits for, and the merge order if stacked;
    - **Unfinished builders**: ticket, branch, what is left;
@@ -32,7 +35,7 @@ Goal: tomorrow's fresh orchestrator can start in two minutes from one short file
    - **Scheduled checks**: date, local time, what to check;
    - **Only this chat knows**: promises and facts that are written nowhere else;
    - **Next up**: the top 5 tickets in order, with why.
-3. Lasting lessons from today (a mistake not to repeat, a new procedure): add or tighten one line in `~/.claude/orchestrator/playbook.md`. Keep that file short, and remove lines that no longer apply.
+4. Lasting lessons from today that are not in the notes (a mistake not to repeat, a new procedure): add or tighten one line in `~/.claude/orchestrator/playbook.md`. Keep that file short, and remove lines that no longer apply.
 
 ## 4. Tidy up
 
