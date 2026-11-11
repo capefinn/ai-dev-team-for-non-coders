@@ -48,6 +48,8 @@ if the gate itself fails to load or crashes:
     refuse any command that could merge or push; let other commands run, so a session can repair the gate
 ```
 
+Because the gate refuses a draft, a command that marks a pull request ready and merges it in one line (`gh pr ready <N> && gh pr merge <N>`) is refused: the pull request is still a draft when the gate reads it, and CI has not run. Mark it ready as its own command, wait until CI is green, and merge in a later command.
+
 The verdict marker the final reviewer writes in its comment:
 
 ```

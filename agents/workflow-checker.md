@@ -33,7 +33,7 @@ Say what does not apply to this setup, and why.
 
 Read the orchestrator skill and its handover, relay and send skills; the state folder (`~/.claude/orchestrator/`: builder brief, scripts, handover, playbook); the agent files; `<rules file>` and `<process document>`.
 
-Already in place. Do not propose these again unless you have numbers that show they fail: `<your list, for example: builders on the mid-priced model; the strongest model only for final reviews; at most six builders; a short builder brief; a clerk for the merge steps; heavy tests on a separate machine; draft pull requests run no CI; scoped re-reviews after small fixes; one handover a day>`.
+Already in place. Do not propose these again unless you have numbers that show they fail: `<your list, for example: builders on the mid-priced model; the strongest model only for final reviews; at most six builders; a short builder brief; a merge clerk for the merge steps; a lean clerk for cards and look-ups; a fresh helper instead of waking an old one; heavy tests on a separate machine; draft pull requests run no CI; scoped re-reviews after small fixes; a daily checkpoint instead of a daily handover>`.
 
 ## 4. Deliver
 
