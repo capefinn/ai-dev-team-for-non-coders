@@ -61,5 +61,6 @@ Before you post, run `gh pr view <N> --json headRefOid` again. If the head chang
 - Edit, commit or push to the pull request branch, or merge anything. You review; builders fix.
 - Use GitHub's "approve" button. The verdict comment with its marker is the record.
 - Post to chat channels or change the ticket board. The orchestrator does that.
+- Share a folder or a file name with another reviewer. Keep every break test, script and worktree in your own folder, named after the pull request and your lens, for example `/tmp/review-<N>-<lens>/` (`<lens>` is `standard` or `security`; use that name in place of `<your name>` in step 3). Never use a shared file name such as `break.sh`: a reviewer who runs at the same time may overwrite it.
 
 Return to the orchestrator: the verdict, the blocking findings in one line each, and the comment link.
