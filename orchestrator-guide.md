@@ -30,6 +30,8 @@ We share it as an example to copy and adapt. Sections 1 to 4 explain how the bui
 | `skills/orchestrator-handover/SKILL.md` | The closing routine, only for when the human wants to close the chat: stop work safely, write the handover, send the daily message |
 | `skills/orchestrator-relay/SKILL.md` | The mid-day handover to a fresh orchestrator chat, only when the human asks: wait for a quiet moment, write the handover, start the new chat, retire the old one |
 | `skills/send-to-orchestrator/SKILL.md` | How any other chat puts work in the orchestrator's queue: find or create the ticket, make it buildable, flag it, comment, tell the orchestrator. It builds nothing |
+| `skills/right-size/SKILL.md` | Which model and which agent for each job, with the reasons, and a check before every agent call. Any chat that starts agents can use it, also without the orchestrator |
+| `skills/right-size/right_size_check.py` | A small script that reads the session transcripts on your computer and lists the jobs that ran on a bigger model than their type needs, and reviews that ran on a smaller one. It uses no model and changes nothing |
 | `agents/builder.md` | The builder agent: one ticket, one draft pull request |
 | `agents/builder-brief.md` | The shared rules every builder reads first |
 | `agents/clerk.md` | The clerk agent: a lean, low-cost helper for ticket comments, board updates, to-do cards, look-ups and read-only checks. It starts without the large instruction files |
@@ -70,7 +72,7 @@ With an orchestrator:
 
 ## 2. The roles
 
-Each role is a separate AI session or agent with its own instructions. The model tier matters: it decides most of the cost.
+Each role is a separate AI session or agent with its own instructions. The model tier matters: it decides most of the cost. The reasons for these model choices are written as a skill that any chat can use, with a script that checks them: `skills/right-size/`.
 
 | Role | Model tier (what we use) | What it does | What it never does |
 |---|---|---|---|
@@ -169,7 +171,7 @@ Sometimes the human wants a fresh chat before the day ends. The human types `/or
 
 About once a week, or when the owner asks, the orchestrator starts the workflow checker (`agents/workflow-checker.md`) on one topic. The checker measures first: what is loaded into every session, the tokens by model and by role from the session logs, and the review rounds and hours per pull request. Then it reads current guidance on how good orchestrators handle loops, memory, context and skills. It delivers one note of at most 100 lines: where the tokens and money go, at most 7 changes ranked by saving (each with its basis, its risk and who decides), and a line for each idea it checked and rejected. It only reads and measures. The orchestrator applies changes to its own skills, rule changes go into the weekly bundle, and a change in the human's areas becomes a question. It never proposes removing a safety guardrail to save tokens.
 
-Each morning, when the human types `/orchestrator`, the orchestrator looks at the date of the newest checker note. If it is 7 or more days old, it starts the checker that day with the next topic: the weekly check once lapsed for weeks because nothing reminded anyone. Once a week it also runs a scorecard of three numbers, with small scripts that use no model and read the session logs and the pull request history. The numbers are: the review verdicts per merged pull request (how many verdicts the average merged pull request needed; lower is better); the cache share (the part of all input tokens that came from the prompt cache; a token is a small piece of text that a model reads or writes, and cached text is read at a small part of the normal price); and the late resumes (messages to a helper that ended more than 4 minutes before; see lesson 15). It writes the first three numbers as one line in the playbook, as the baseline, and adds one line each week. If a number gets worse for two weeks in a row, the change behind it is undone.
+Each morning, when the human types `/orchestrator`, the orchestrator looks at the date of the newest checker note. If it is 7 or more days old, it starts the checker that day with the next topic: the weekly check once lapsed for weeks because nothing reminded anyone. Once a week it also runs a scorecard of three numbers, with small scripts that use no model and read the session logs and the pull request history. The numbers are: the review verdicts per merged pull request (how many verdicts the average merged pull request needed; lower is better); the cache share (the part of all input tokens that came from the prompt cache; a token is a small piece of text that a model reads or writes, and cached text is read at a small part of the normal price); and the late resumes (messages to a helper that ended more than 4 minutes before; see lesson 15). It writes the first three numbers as one line in the playbook, as the baseline, and adds one line each week. If a number gets worse for two weeks in a row, the change behind it is undone. In the same weekly slot it runs the right-size check (`skills/right-size/right_size_check.py`): the jobs that ran on a bigger model than their type needs, the reviews that ran on a smaller one, and the median start-up context of each agent type.
 
 ---
 
@@ -310,7 +312,7 @@ For thumbnails and ads, build from the brand files (logo, brand illustrations, r
 
 1. **Keep the orchestrator's chat free.** Anything that needs more than about two tool calls goes to a background agent. *Why:* the human waited minutes for every reply while the orchestrator waited for CI or wrote board cards itself. Now the orchestrator answers the human first, in one short message. Clerks (the lean clerk and the merge clerk) do the mechanical work. The orchestrator keeps the decisions, the merge order and the conversation. When the human asks a question, the orchestrator answers from what it knows; if a fact needs checking, it says so in one line and checks in the background.
 
-2. **Builders run on a cheaper model; the stronger model only reviews.** Pass the model explicitly every time you start an agent. An agent that inherits the orchestrator's model runs on the expensive tier: one builder that was left on the strong model used several times the tokens of a normal build. The strongest model is for final reviews and, rarely, a hard design job, and the brief then says why. A short, explicit tool list in the builder's definition also cut its start-up context by about half. Clerks follow the same rule: start every card, board line and read-only check as the lean clerk (`agents/clerk.md`), which starts without the large always-loaded instruction files, and a pure look-up on the smallest model. A general helper loads every instruction file, and in our measurements it started at more than twice the size of the lean ones. A builder can also compact its own history at a set size (`autoCompactWindow`), so a long build does not grow without limit.
+2. **Builders run on a cheaper model; the stronger model only reviews.** Pass the model explicitly every time you start an agent. An agent that inherits the orchestrator's model runs on the expensive tier: one builder that was left on the strong model used several times the tokens of a normal build. The strongest model is for final reviews and, rarely, a hard design job, and the brief then says why. A short, explicit tool list in the builder's definition also cut its start-up context by about half. Clerks follow the same rule: start every card, board line and read-only check as the lean clerk (`agents/clerk.md`), which starts without the large always-loaded instruction files, and a pure look-up on the smallest model. A general helper loads every instruction file, and in our measurements it started at more than twice the size of the lean ones. A builder can also compact its own history at a set size (`autoCompactWindow`), so a long build does not grow without limit. The `right-size` skill (`skills/right-size/`) holds these rules for any chat that starts agents, and its script lists the jobs that ran on a bigger model than their type needs. Its first run on our own transcripts found a file-search helper that had run on the top model, because the call passed no model.
 
 3. **A reviewer is never the session that wrote the code, and its verdict is tied to the exact head commit.** The session that wrote the code still has the same wrong assumptions it had while writing; a fresh session on a stronger model does not have them. The verdict names the 40-character commit. Any later push needs a new verdict. The merge command passes `--match-head-commit`, so a push between the review and the merge makes the merge fail.
 
@@ -370,7 +372,7 @@ For thumbnails and ads, build from the brand files (logo, brand illustrations, r
 
 Some steps use features of the Claude desktop app: listing, renaming and archiving chat sessions, and push notifications. If your app does not have them, do those steps by hand or leave them out.
 
-1. **Skills.** Copy `skills/orchestrator/`, `skills/orchestrator-handover/`, `skills/orchestrator-relay/` and `skills/send-to-orchestrator/` into `~/.claude/skills/`. The human then types `/orchestrator` each morning in the same chat, says "checkpoint" before leaving, types `/orchestrator-handover` only when closing the chat, and types `/orchestrator-relay` when a fresh chat is wanted in the middle of the day. Every other chat that finds work for the orchestrator needs `send-to-orchestrator` too: put it where those chats load their skills.
+1. **Skills.** Copy `skills/orchestrator/`, `skills/orchestrator-handover/`, `skills/orchestrator-relay/` and `skills/send-to-orchestrator/` into `~/.claude/skills/`. The human then types `/orchestrator` each morning in the same chat, says "checkpoint" before leaving, types `/orchestrator-handover` only when closing the chat, and types `/orchestrator-relay` when a fresh chat is wanted in the middle of the day. Every other chat that finds work for the orchestrator needs `send-to-orchestrator` too: put it where those chats load their skills. Copy `skills/right-size/` (the skill and its script) as well: the orchestrator uses it before every agent it starts, and any other chat that starts agents can use it too.
 2. **Agents.** Copy `agents/builder.md`, `agents/clerk.md`, `agents/final-reviewer.md`, `agents/design-agent.md` and `agents/workflow-checker.md` into your repository's `.claude/agents/` folder (shared with the team) or into `~/.claude/agents/` (only for you). Copy `agents/builder-brief.md` into `~/.claude/orchestrator/`: it is not an agent and has no header. If builders and the clerk use the board through an MCP server (Notion, in our case), add those tool names to `builder.md` and `clerk.md`. In `builder.md`, fill in `autoCompactWindow`: the size, in tokens, at which Claude Code summarizes a builder's conversation to make room (the comment in the file explains it). In `clerk.md`, keep `omitClaudeMd: true`: it starts the clerk without the large always-loaded instruction files.
 3. **State folder.** Create `~/.claude/orchestrator/` with: `HANDOVER.md` and `handover-template.md` (both copies of `templates/handover.md`), `todo-card.md` (a copy of `templates/todo-card.md`), an empty `handovers/` folder, an empty `notes/` folder (with an empty `notes/archive/` folder inside it) and an empty `playbook.md`. The skills read these files.
 4. **Merge gate.** Copy `templates/merge-gate.example.mjs` to `scripts/merge-gate/merge-gate.mjs` in your repository, edit the constants at the top, register it in `.claude/settings.json` (the snippet is in `templates/merge-gate-hook.md`), and test it as described there.
@@ -394,14 +396,14 @@ We wrote these as small shell scripts. Each one replaced a manual step that went
 - **remote-test:** sends a branch to the test machine and runs the full suites there.
 - **memory-health:** compares the length of the always-loaded notes index (see the smaller lessons) with the length that your tool loads. It prints a few lines, uses no model, and fails when the index is too long.
 - **backup:** a scheduled job that copies the state folder, the notes and the memory files to a private repository every night, after a secret scan. It writes a one-line status file in the state folder: OK with the date, or blocked when the scan found a secret.
-- **scorecard:** three small scripts that print numbers only, from the session logs and the pull request history: review verdicts per merged pull request, the cache share, and late resumes (defined under "Checking the workflow itself" in section 3). Ask Claude Code to write them.
+- **scorecard:** three small scripts that print numbers only, from the session logs and the pull request history: review verdicts per merged pull request, the cache share, and late resumes (defined under "Checking the workflow itself" in section 3). Ask Claude Code to write them. The right-size check is already written: `skills/right-size/right_size_check.py`.
 
 ### Without Claude Code
 
 - **Skills are routines.** Paste `skills/orchestrator/SKILL.md` as the first message of the day's orchestrator chat, and the handover routine when the human wants to close the chat (the checkpoint is the same file, written once a day while the chat keeps running). Paste the relay routine only when the human asks for a mid-day handover, and the send routine into any chat that sends work to the orchestrator.
 - **Agents are separate sessions** that start with these files as their instructions. Whatever your tool calls them (subagents, background agents, separate chats), start each one with its agent file and a short brief.
 - **The merge gate is anything that runs before a merge and can refuse it.** Options: your tool's pre-command hook; a wrapper script that is the only way agents may merge; or branch protection with required checks plus a small CI job that sets a required status when it finds an approved verdict marker for the head commit. Use branch protection with required checks where your plan allows it; the hook is an extra layer that stops the merge before the command runs.
-- **Model tiers:** your provider's strongest model for the orchestrator and the reviewer, a mid-priced model for builders and clerks, the smallest model for look-ups.
+- **Model tiers:** your provider's strongest model for the orchestrator and the reviewer, a mid-priced model for builders and clerks, the smallest model for look-ups. `skills/right-size/SKILL.md` has the full table, the reasons, and when a job may go up a tier.
 
 ### What to change for your project
 
@@ -488,6 +490,8 @@ Start work without waiting for a reply.
 
 Never let an agent inherit your model. Start every builder as `builder` and every card, board line and read-only check as `clerk`, never as a general agent: a general agent loads every always-loaded instruction file and starts at more than twice the size. Only the merge clerk stays a general agent; the lean clerk never merges. At most 6 builders at the same time; queue the rest. Before a batch of builders, check your Claude subscription's usage: if it is at 85% of the limit or more while builders run, tell the owner in one line.
 
+A job that runs above the model in its row (for example a builder on `opus`) carries one line in its brief: `Model reason: <why the model in its row is not enough>`. The reasons behind this table, and the weekly check, are in the `right-size` skill (`skills/right-size/`).
+
 ##### Keep your chat free
 
 Answer the owner first, in one short message. Anything that needs more than about two quick tool calls goes to a background agent. You keep the decisions, the merge order and the conversation. When the owner asks a question, answer from what you already know. If a fact needs checking, say so in one line, check in the background, and come back only if it changes the answer.
@@ -554,6 +558,8 @@ Once a week, run three small scripts that print numbers only and use no model. T
 - **Late resumes:** messages sent to a helper that had ended more than 4 minutes before (see "Follow-ups").
 
 Write the first three numbers as one line in `~/.claude/orchestrator/playbook.md` (`<date>: baseline, <verdicts>, <cache share>, <late resumes>`), and add one line each week. If a number gets worse for two weeks in a row, undo the change behind it.
+
+At the same time, run `python3 ~/.claude/skills/right-size/right_size_check.py`. If a job type is over-sized two weeks in a row, fix the process that starts these jobs (add the missing agent file, or write `model` in every call), not the single job.
 
 ##### Tidy up and keep the board current
 
@@ -1623,4 +1629,459 @@ if (runDirectly()) {
     process.exit(0);
   });
 }
+```
+
+
+## Appendix P: Right-size: the right model for each job (`skills/right-size/SKILL.md`)
+
+Claude Code header:
+
+```yaml
+name: right-size
+description: Give every agent job the smallest model and the smallest start-up context that do it well, and check afterwards that no job ran on a bigger model than it needed. Use it before every Agent call (builder, reviewer, clerk, look-up, design job), when someone asks "which model should this run on?", "why did this cost so much?" or "are we using the top model too much?", and once a week to run the checker on the session transcripts. Works on its own or with the orchestrator skills in this kit.
+```
+
+### Right-size: the right model for each job
+
+**The idea:** use a cheaper model where another step checks the work. Use the strongest model for the step that does the checking. Never use a bigger model than the job needs.
+
+This is not "use cheaper models everywhere". Some jobs must stay on the strongest model, because a mistake there costs more than a cheaper model saves. Right-sizing goes in both directions.
+
+**Words used here** (all from Claude Code):
+
+- **Agent job:** one task that a chat hands to a helper with the Agent tool. The helper works in its own session and reports back.
+- **Brief:** the message that starts an agent job: what to do, which files, and what "done" means.
+- **Tier:** the size of a model: small, mid, top or deepest. Bigger models cost more per token.
+- **Agent file:** a short file in `.claude/agents/` that defines one kind of helper: its name, its model, its tools and its instructions.
+- **General agent:** the built-in helper that has no agent file of its own. It loads all the instruction files and every tool.
+- **Start-up context:** everything a helper reads before it does any work, counted in tokens (small pieces of text; about four characters each).
+- **Look-up:** a job that only needs to find a fact, for example "which file sets the price?"
+
+#### 1. Which model for which job
+
+The Agent tool takes a `model` value: `haiku` (small), `sonnet` (mid), `opus` (top) and, if your Claude plan offers it, `fable` (the deepest reasoning model).
+
+| Job | Model | Why this size |
+|---|---|---|
+| Look-ups: a fact in files, pull requests or logs; file searches; "where is X?" | `haiku` | The answer is a fact that you can check in one step. A bigger model reads the same files at a higher price. |
+| Building one task, writing its tests, fixing a review finding; ticket cards, comments, read-only checks; the weekly workflow check | `sonnet` (the default) | The work is reviewed afterwards, and the tests run on it. |
+| The final review of every change before it merges. Rarely, with a `Model reason:` line: writing security or backend code that the mid model got wrong | `opus` | The review is the last check before the product changes. It must find what the builder missed. |
+| Re-planning a task after two failed reviews; a change to a locked data contract; a hard money or security design | `fable` (or `opus` if your plan has no `fable`) | It plans and writes a design note with options and a recommendation. It writes no code. A builder on `sonnet` builds from the note. |
+
+The rules:
+
+1. **Write `model` in every Agent call.** A job with no `model` gets the model from its agent file. A general agent has no agent file. So, without `model`, it runs on the same model as the chat that started it, and that chat usually runs on the top model. Cost can grow this way, and nobody chose it. Built-in helpers count too: a file-search helper started without a model can run on the top model.
+2. **`sonnet` is the default.** Use `haiku` for pure look-ups. A job may go above the model in its own row only with a reason in the brief, on its own line: `Model reason: <why the model in its row is not enough>`. Without a reason, do not go up. The checker in section 5 looks for this line.
+3. **The deepest model only plans.** It writes a design note and no code. Give it a read-only tool list (`Read, Grep, Glob, Bash`), one job at a time, and the problem, the earlier attempts and the review comments. Never use it for routine builds.
+4. **Reviews never go below the top model.** The final review stays on `opus`, in a fresh session that did not write the code. A cheaper review removes the check that keeps the cheaper builders safe.
+5. **At most about 6 builders at the same time.** Queue the rest. More builders at once cause more merge conflicts and more re-reviews, and those cost more than waiting.
+
+#### 2. Lean agents: cut the start-up context too
+
+The model's price is one part of the cost. The other part is what each job reads before it starts: the instruction files, the memory index, the descriptions of skills and agents, and the tool lists of connected services. A general agent reads all of it.
+
+- **Give each kind of job that comes back often its own agent file** with `model`, a short `tools:` list (only what the job needs) and, for a helper that needs none of the project's instruction files, `omitClaudeMd: true` (it then starts without the CLAUDE.md files, the project's always-loaded instructions). The brief then carries the few rules it needs.
+- **Measured in our setup:** a general agent used as a builder read about 96,000 tokens before it started work. The lean builder (its own agent file with a short tool list) did a whole small job, updating a branch and fixing one conflict in 20 tool calls, in about 52,000 tokens.
+- **Check it:** the first reply of a job shows its start-up context. The checker prints the median per job type.
+
+An example agent file:
+
+```markdown
+---
+name: clerk
+description: Ticket comments, board updates, look-ups and read-only checks. Never merges, builds or messages people.
+model: sonnet
+omitClaudeMd: true
+tools: Read, Grep, Glob, Bash
+---
+Do exactly the steps in the brief. Report in at most 8 lines, in plain words.
+```
+
+#### 3. Keep the main chat free
+
+The chat that the human talks to usually runs on the top model. Every step that it does itself runs on the most expensive model, and the human waits while it works.
+
+- **Anything that needs more than about two tool calls goes to a background agent** on the right model. The main chat keeps the decisions, the order of the work and the conversation.
+- **Other chats write their status into a file** and do not message the main chat. They message it only when something is ready to merge or something is broken.
+- **Measured in our setup, on one day before this rule:** the main chat took about 550 steps itself, and it was interrupted about 200 times by messages: helper notices, messages from other chats and automatic wake-ups.
+
+#### 4. Before every Agent call
+
+1. What kind of job is it? Pick the row in section 1.
+2. Is there an agent file for this kind of job? Use it, not the general agent.
+3. Write `model` in the call.
+4. Above the model in its row? Write the `Model reason:` line in the brief.
+5. Give the exact files, the finding and what "done" means. Never "explore the repository".
+6. A follow-up for a helper that ended more than about 4 minutes ago: start a fresh lean helper with the branch, the pull request and the exact comment. Do not resume the old helper (send it a new message). The prompt cache (a short-term store of text the model has just read) keeps a helper's history cheap to read for about 5 minutes. After that, a resumed helper must read its whole old conversation again at the normal price.
+
+#### 5. Check it once a week
+
+`right_size_check.py`, next to this file, reads the Claude Code transcripts on this computer (`~/.claude/projects/`) and lists the jobs that ran on a bigger model than their type needs. It uses no model, sends nothing anywhere and changes nothing. It needs Python 3.8 or newer and nothing else.
+
+```bash
+python3 ~/.claude/skills/right-size/right_size_check.py
+```
+
+```bash
+python3 ~/.claude/skills/right-size/right_size_check.py --days 30 --project my-app
+```
+
+What it prints:
+
+- **Over-sized:** jobs above the highest model for their type, without a `Model reason:` line. The column "model in the call" says `none` when the job got its model from somewhere else (its agent file or the chat that started it).
+- **Under-sized:** jobs below the lowest model for their type, for example a final review below the top model.
+- **Above the maximum, with a reason:** allowed. If this list grows every week, the reason has become a habit.
+- **Not checked:** jobs on a model whose name matches no tier. Add the name to `tiers` in a rules file (see below).
+- **By job type:** how many jobs, which models they ran on, and the median start-up context and peak context.
+
+The rules it uses:
+
+```json
+{
+  "tiers": ["haiku", "sonnet", "opus", "fable"],
+  "default_max": "sonnet",
+  "types": {
+    "Explore": {"max": "haiku"},
+    "scout": {"max": "haiku"},
+    "builder": {"max": "sonnet"},
+    "clerk": {"max": "sonnet"},
+    "workflow-checker": {"max": "sonnet"},
+    "final-reviewer": {"min": "opus", "max": "opus"},
+    "design-agent": {"max": "fable"}
+  },
+  "reason_markers": ["model reason:"],
+  "with_reason_max": "opus"
+}
+```
+
+- **To change them,** write only the parts you change into a JSON file and pass `--rules my-rules.json`. The types in your file are added to these; a type you write replaces that type's whole entry. Any other key you write replaces the default.
+- **A type with no `max` here** may use the model that its own agent file fixes, because that choice is written down. If its agent file fixes no model, it may use up to `default_max`.
+- **The checker knows a job's type, not its purpose.** A look-up started as a general agent is checked against the general limit (`sonnet`). To hold look-ups to `haiku`, give them their own agent file (for example `scout`).
+- **A reason allows a job to go up to `opus`** (`with_reason_max`), not higher. Only a type whose own rule allows it, such as `design-agent`, may use `fable`.
+- **A reason counts only on its own line** that starts with `Model reason:`. A brief that only mentions the rule in a sentence does not count.
+
+**What it prints, and what it does not.** It prints the job type, the model names and the short label of each job, so that you can see which job it was. Labels and agent type names can hold names: add `--no-labels` before you share the output (the types are still printed). It never prints the text of a prompt; it only checks whether the `Model reason:` line is there.
+
+**It depends on Claude Code's own files.** It reads each helper's transcript and the small job file next to it (`<session>/subagents/agent-<id>.jsonl` and `.meta.json`). These are not a documented interface, and a new Claude Code version can change them. Older transcripts have no job file and are skipped; the checker says how many.
+
+**What to do with the result.** A flagged job needs a closer look; it is not proof of a mistake. One over-sized job is a single mistake. If the same job type is over-sized two weeks in a row, an agent file is missing, or the process that starts these jobs does not write `model`: fix that process. After you move a job type down to a smaller model, watch the review rounds per merged change for two weeks. If they go up, go back to the bigger model.
+
+#### What this skill does not do
+
+- It does not count money: prices change and plans differ. It counts jobs, models and context sizes.
+- It reads only the transcripts on this computer.
+- It does not decide for the human. A model rule that changes what a whole team uses is the owner's decision.
+
+
+## Appendix Q: Right-size check script (`skills/right-size/right_size_check.py`)
+
+```python
+#!/usr/bin/env python3
+"""Right-size check: list agent jobs that ran on a bigger model than their type needs.
+
+It reads the Claude Code session transcripts on this computer
+(~/.claude/projects/<project>/<session>/subagents/). It uses no model, sends
+nothing anywhere and changes nothing. It prints numbers and the short label of
+each job, never the text of a prompt. Use --no-labels before you share the output.
+
+Usage:
+  python3 right_size_check.py                 # the last 7 days, all projects
+  python3 right_size_check.py --days 30
+  python3 right_size_check.py --project my-app --no-labels
+  python3 right_size_check.py --rules my-rules.json --all
+
+Python 3.8 or newer, standard library only.
+"""
+import argparse
+import glob
+import json
+import os
+import statistics
+import sys
+import time
+from datetime import datetime
+
+# The rules. To change them, write only the parts you change into a JSON file and pass
+# --rules. Types in your file are added to these; other keys replace these.
+DEFAULT_RULES = {
+    # Model tiers from small to large. Each name is looked for inside the model id.
+    "tiers": ["haiku", "sonnet", "opus", "fable"],
+    # The highest tier a job type may use without a reason in its brief.
+    "default_max": "sonnet",
+    "types": {
+        "Explore": {"max": "haiku"},
+        "scout": {"max": "haiku"},
+        "builder": {"max": "sonnet"},
+        "clerk": {"max": "sonnet"},
+        "workflow-checker": {"max": "sonnet"},
+        "final-reviewer": {"min": "opus", "max": "opus"},
+        "design-agent": {"max": "fable"},
+    },
+    # A brief that holds one of these lines may go up to "with_reason_max".
+    "reason_markers": ["model reason:"],
+    "with_reason_max": "opus",
+}
+
+
+def load_rules(path):
+    rules = json.loads(json.dumps(DEFAULT_RULES))
+    if path:
+        try:
+            with open(path, encoding="utf-8") as fh:
+                mine = json.load(fh)
+        except (OSError, ValueError) as err:
+            sys.exit(f"Cannot read the rules file {path}: {err}")
+        if not isinstance(mine, dict) or not isinstance(mine.get("types", {}), dict):
+            sys.exit("The rules file must be a JSON object, and its 'types' an object.")
+        # Your types are added to the defaults; a type you write replaces that type's whole entry.
+        rules["types"].update(mine.pop("types", {}))
+        rules.update(mine)
+    # Every tier name in the rules must be one of the tiers.
+    names = [rules["default_max"], rules["with_reason_max"]]
+    for rule in rules["types"].values():
+        names += [rule[k] for k in ("min", "max") if k in rule]
+    unknown = sorted({n for n in names if n not in rules["tiers"]})
+    if unknown:
+        sys.exit(f"These names are not in 'tiers' {rules['tiers']}: {', '.join(unknown)}")
+    return rules
+
+
+def tier_of(model, tiers):
+    """Index of the tier whose name is in the model id, or None."""
+    model = (model or "").lower()
+    for i, name in enumerate(tiers):
+        if name in model:
+            return i
+    return None
+
+
+def read_job(path):
+    """Read one subagent transcript. Returns a dict of numbers, or None."""
+    meta_path = path[: -len(".jsonl")] + ".meta.json"
+    if not os.path.exists(meta_path):
+        return None
+    try:
+        with open(meta_path, encoding="utf-8") as fh:
+            meta = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    job = {
+        "type": meta.get("agentType") or "unknown",
+        "label": meta.get("description") or "",
+        "asked": meta.get("model"),  # None: no model in the call
+        "model": None,
+        "start": None,
+        "cwd": None,
+        "startup": None,  # context of the first reply: what the job read before it did anything
+        "peak": 0,  # the largest context of any reply: how big the job grew
+        "turns": 0,
+        "has_reason": False,
+    }
+    seen, prompt_read = set(), False
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if job["start"] is None and row.get("timestamp"):
+                job["start"] = row["timestamp"]
+            if job["cwd"] is None and row.get("cwd"):
+                job["cwd"] = row["cwd"]
+            msg = row.get("message")
+            if not isinstance(msg, dict):
+                continue
+            if not prompt_read and msg.get("role") == "user":
+                # The brief is the first user message. Only a yes/no is kept:
+                # the prompt text is never stored or printed.
+                prompt_read = True
+                text = msg.get("content")
+                if isinstance(text, list):
+                    text = "\n".join(b.get("text", "") for b in text if isinstance(b, dict))
+                lines = [l.strip().lower() for l in str(text or "").splitlines()]
+                job["has_reason"] = any(l.startswith(m) for l in lines for m in RULES["reason_markers"])
+            if msg.get("role") != "assistant":
+                continue
+            # One reply can be split over several lines with the same id and usage.
+            mid = msg.get("id")
+            if mid is not None:
+                if mid in seen:
+                    continue
+                seen.add(mid)
+            model = msg.get("model") or ""
+            if job["model"] is None and model and not model.startswith("<"):
+                job["model"] = model
+            u = msg.get("usage") or {}
+            read_in = (u.get("input_tokens") or 0) + (u.get("cache_creation_input_tokens") or 0) \
+                + (u.get("cache_read_input_tokens") or 0)
+            if not read_in:
+                continue
+            job["turns"] += 1
+            if job["startup"] is None:
+                job["startup"] = read_in
+            job["peak"] = max(job["peak"], read_in)
+    return job
+
+
+def agent_file_models(cwds):
+    """Model fixed in each agent file (~/.claude/agents and <project>/.claude/agents)."""
+    found = {}
+    folders = [os.path.expanduser("~/.claude/agents")] + [os.path.join(c, ".claude", "agents") for c in cwds]
+    for folder in folders:
+        for f in glob.glob(os.path.join(folder, "*.md")):
+            name, model = os.path.basename(f)[:-3], None
+            try:
+                with open(f, encoding="utf-8") as fh:
+                    lines = fh.read().split("\n")
+            except OSError:
+                continue
+            if not lines or lines[0].strip() != "---":
+                continue
+            for line in lines[1:]:
+                if line.strip() == "---":
+                    break
+                key, _, value = line.partition(":")
+                if key.strip() == "name":
+                    name = value.strip().strip("'\"")
+                elif key.strip() == "model":
+                    model = value.strip().strip("'\"")
+            if model and model != "inherit":
+                found.setdefault(name, model)
+    return found
+
+
+def judge(job, rules):
+    tiers = rules["tiers"]
+    used = tier_of(job["model"], tiers)
+    if used is None:
+        return "other"
+    rule = rules["types"].get(job["type"], {})
+    # A type with no rule may use the model its own agent file fixes: that choice is written down.
+    plain_max = tier_of(rule.get("max") or FILE_MODELS.get(job["type"]) or rules["default_max"], tiers)
+    if plain_max is None:
+        plain_max = tier_of(rules["default_max"], tiers)
+    top = plain_max
+    if job["has_reason"]:
+        top = max(top, tier_of(rules["with_reason_max"], tiers))
+    floor = tier_of(rule["min"], tiers) if rule.get("min") else None
+    if used > top:
+        return "over"
+    if floor is not None and used < floor:
+        return "under"
+    if used > plain_max:
+        return "reason"
+    return "ok"
+
+
+def short(n):
+    if n is None:
+        return "-"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}k"
+    return str(n)
+
+
+def local_time(ts):
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone().strftime("%d %b %H:%M")
+    except (AttributeError, ValueError):
+        return "?"
+
+
+def model_name(model):
+    i = tier_of(model, RULES["tiers"])
+    return RULES["tiers"][i] if i is not None else (model or "?")
+
+
+def main():
+    global RULES
+    ap = argparse.ArgumentParser(description="List agent jobs that ran on a bigger model than their type needs.")
+    ap.add_argument("--days", type=float, default=7, help="how many days back to read (default 7)")
+    ap.add_argument("--project", default="", help="only project folders whose name contains this text")
+    ap.add_argument("--projects-dir", default=os.path.expanduser("~/.claude/projects"))
+    ap.add_argument("--rules", help="a JSON file that replaces parts of the default rules")
+    ap.add_argument("--no-labels", action="store_true", help="hide the job labels (do this before sharing)")
+    ap.add_argument("--all", action="store_true", help="list every job, not only the flagged ones")
+    ap.add_argument("--limit", type=int, default=30, help="most lines per list (default 30)")
+    args = ap.parse_args()
+    RULES = load_rules(args.rules)
+
+    cutoff = time.time() - args.days * 86400
+    files = [f for f in glob.glob(os.path.join(args.projects_dir, "*", "*", "subagents", "*.jsonl"))
+             if args.project in f.split(os.sep)[-4] and os.path.getmtime(f) >= cutoff]
+    jobs, no_meta = [], 0
+    for f in files:
+        job = read_job(f)
+        if job is None:
+            no_meta += 1
+            continue
+        try:
+            started = datetime.fromisoformat(job["start"].replace("Z", "+00:00")).timestamp()
+        except (AttributeError, ValueError):
+            started = os.path.getmtime(f)
+        if started < cutoff:
+            continue
+        jobs.append(job)
+    FILE_MODELS.update(agent_file_models({j["cwd"] for j in jobs if j["cwd"]}))
+    for job in jobs:
+        job["verdict"] = judge(job, RULES)
+    jobs.sort(key=lambda j: j["start"] or "")
+
+    print(f"Right-size check: the last {args.days:g} days, {len(jobs)} agent jobs")
+    if no_meta:
+        print(f"({no_meta} older transcripts have no job file and were not checked)")
+
+    def show(title, verdict, why):
+        rows = [j for j in jobs if j["verdict"] == verdict]
+        print(f"\n{title}: {len(rows)} jobs, {sum(j['turns'] for j in rows)} replies")
+        if rows and why:
+            print(f"  {why}")
+            print(f"  {'started':<12}  {'job type':<22} {'ran on':<7} {'model in the call':<22} {'replies':>7} {'peak':>6}")
+        for j in rows[: args.limit]:
+            asked = j["asked"] or "none"
+            label = "" if args.no_labels else f'  "{j["label"][:48]}"'
+            print(f"  {local_time(j['start']):<12}  {j['type'][:22]:<22} {model_name(j['model']):<7}"
+                  f" {asked:<22} {j['turns']:>7} {short(j['peak']):>6}{label}")
+        if len(rows) > args.limit:
+            print(f"  ... and {len(rows) - args.limit} more (use --limit)")
+
+    show("Over-sized", "over", "Above the highest model for its type. A 'Model reason:' line in the brief allows up to "
+         f"{RULES['with_reason_max']}; higher only where the type's own rule allows it.")
+    show("Under-sized", "under", "Below the lowest model for its type (for example a final review below the top tier).")
+    show("Above the type's maximum, with a reason", "reason", "Allowed. If this list grows every week, the reason is a habit.")
+    if args.all:
+        show("Right-sized", "ok", "")
+    other = [j for j in jobs if j["verdict"] == "other"]
+    if other:
+        names = sorted({j["model"] or "no model found" for j in other})
+        print(f"\nNot checked: {len(other)} jobs on a model that matches no tier ({', '.join(names)}).")
+        print("  Add its name to 'tiers' in a rules file.")
+
+    print("\nBy job type (context in tokens; start-up = before the job did anything, peak = its largest)")
+    print(f"  {'job type':<22} {'jobs':>5}  {'ran on':<34} {'start-up':>8} {'peak':>6}")
+    by_type = {}
+    for j in jobs:
+        by_type.setdefault(j["type"], []).append(j)
+    for t, rows in sorted(by_type.items(), key=lambda kv: -len(kv[1])):
+        models = {}
+        for j in rows:
+            m = model_name(j["model"])
+            models[m] = models.get(m, 0) + 1
+        mix = ", ".join(f"{m} {c}" for m, c in sorted(models.items(), key=lambda kv: -kv[1]))
+        starts = [j["startup"] for j in rows if j["startup"]]
+        peaks = [j["peak"] for j in rows if j["peak"]]
+        start_med = short(int(statistics.median(starts))) if starts else "-"
+        peak_med = short(int(statistics.median(peaks))) if peaks else "-"
+        print(f"  {t[:22]:<22} {len(rows):>5}  {mix:<34} {start_med:>8} {peak_med:>6}")
+    print("  (median per job type)")
+    return 0
+
+
+RULES = DEFAULT_RULES
+FILE_MODELS = {}
+
+if __name__ == "__main__":
+    sys.exit(main())
 ```
