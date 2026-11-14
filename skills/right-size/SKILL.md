@@ -128,6 +128,14 @@ The rules it uses:
 
 **What to do with the result.** A flagged job needs a closer look; it is not proof of a mistake. One over-sized job is a single mistake. If the same job type is over-sized two weeks in a row, an agent file is missing, or the process that starts these jobs does not write `model`: fix that process. After you move a job type down to a smaller model, watch the review rounds per merged change for two weeks. If they go up, go back to the bigger model.
 
+## Using it in other setups and tools
+
+- **Another orchestrator, or none, on Claude Code.** This skill does not need the orchestrator skills in this kit. Any chat that starts helper agents can use it: one chat with a few helpers, your own orchestrator, or a plugin that starts helpers. The checker reads every helper job that Claude Code saved, no matter who started it.
+  - **Use your own helper names in a rules file.** The checker knows this kit's agent types (`builder`, `clerk`, `final-reviewer`, `design-agent`, `workflow-checker`, `scout`) and the built-in `Explore`. A type that it does not know may use the model that its own agent file sets, or else up to `default_max`. To make sure your own reviewer always uses the top model, write it into a JSON file and pass the file with `--rules` (see section 5), for example `{"types": {"reviewer": {"min": "opus", "max": "opus"}}}`.
+- **Your orchestrator must write the `Model reason:` line in its briefs.** Without the line, every job above its limit shows as over-sized. With the line, it shows in the list of jobs above the maximum with a reason.
+- **Other AI coding tools and agent frameworks.** The method works in tools that offer models of different sizes. The tool must also let you start helpers on a model you choose. Match small, mid, top and deepest to that provider's models, and keep the reason line and the lean helpers. This skill does not load there by itself: paste it into the tool's instructions. The checker reads only Claude Code's history files, so for another tool the checker must be rewritten for that tool's logs, or you write your own weekly check.
+- **An AI chat app.** If the app cannot start helpers on a model you choose, you can use only the ideas, not the tools: choose the model size yourself for each task, and keep the strongest model for the final check of anything important.
+
 ## What this skill does not do
 
 - It does not count money: prices change and plans differ. It counts jobs, models and context sizes.
