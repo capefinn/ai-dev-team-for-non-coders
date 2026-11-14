@@ -59,6 +59,8 @@ Start work without waiting for a reply.
 
 Never let an agent inherit your model. Start every builder as `builder` and every card, board line and read-only check as `clerk`, never as a general agent: a general agent loads every always-loaded instruction file and starts at more than twice the size. Only the merge clerk stays a general agent; the lean clerk never merges. At most 6 builders at the same time; queue the rest. Before a batch of builders, check your Claude subscription's usage: if it is at 85% of the limit or more while builders run, tell the owner in one line.
 
+A job that runs above the model in its row (for example a builder on `opus`) carries one line in its brief: `Model reason: <why the model in its row is not enough>`. The reasons behind this table, and the weekly check, are in the `right-size` skill (`skills/right-size/`).
+
 ### Keep your chat free
 
 Answer the owner first, in one short message. Anything that needs more than about two quick tool calls goes to a background agent. You keep the decisions, the merge order and the conversation. When the owner asks a question, answer from what you already know. If a fact needs checking, say so in one line, check in the background, and come back only if it changes the answer.
@@ -125,6 +127,8 @@ Once a week, run three small scripts that print numbers only and use no model. T
 - **Late resumes:** messages sent to a helper that had ended more than 4 minutes before (see "Follow-ups").
 
 Write the first three numbers as one line in `~/.claude/orchestrator/playbook.md` (`<date>: baseline, <verdicts>, <cache share>, <late resumes>`), and add one line each week. If a number gets worse for two weeks in a row, undo the change behind it.
+
+At the same time, run `python3 ~/.claude/skills/right-size/right_size_check.py`. If a job type is over-sized two weeks in a row, fix the process that starts these jobs (add the missing agent file, or write `model` in every call), not the single job.
 
 ### Tidy up and keep the board current
 
